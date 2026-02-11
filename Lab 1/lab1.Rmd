@@ -7,23 +7,24 @@ editor_options:
 ---
 
 ## Setup
-- Download the file `full_potential_outcomes.tsv`
-- Move the file to a "lab 1" folder on your own computer
-- Install the `tidyverse` and `here` R packages if you don't already have them
+
+-   Download the file `full_potential_outcomes.tsv`
+-   Move the file to a "lab 1" folder on your own computer
+-   Install the `tidyverse` and `here` R packages if you don't already have them
 
 ```{r message=F, warning=F}
 knitr::opts_chunk$set(fig.width=4, fig.height=3)
 # install.packages(c('tidyverse', 'here'))
 library(tidyverse)
 library(here)
-df <- readr::read_tsv("Lab 1/full_potential_outcomes.tsv")
+df <- readr::read_tsv("full_potential_outcomes.tsv")
 ```
 
 The data contains the following columns:
 
-- **Potential Outcomes**: `y0` and `y1`
-- **Observed Outcome**: `y`
-- **Treatment**: `t`.
+-   **Potential Outcomes**: `y0` and `y1`
+-   **Observed Outcome**: `y`
+-   **Treatment**: `t`.
 
 ```{r}
 df %>% head()  
@@ -31,23 +32,26 @@ df %>% head()
 
 ## Lab Demonstration:
 
-- How does the observed outcome `y` relate to the treatment `t` and the potential outcomes `y0` and `y1`? 
+-   How does the observed outcome `y` relate to the treatment `t` and the potential outcomes `y0` and `y1`?
 
 ```{r}
 df %>% select(y0, y1, t, y) %>% tail
 ```
 
-- Calculate the difference in means between the treated and the untreated. 
+-   Calculate the difference in means between the treated and the untreated.
+
 ```{r}
 mean(filter(df, t == 1)$y) - mean(filter(df, t == 0)$y)
 ```
 
-- Calculate the true global average treatment effect 
+-   Calculate the true global average treatment effect
+
 ```{r}
 mean(df$y1 - df$y0)
 ```
 
-- Explain why they are different. Show this using R.
+-   Explain why they are different. Show this using R.
+
 ```{r}
 # Treatment assignment is correlated with potential outcomes at baseline
 # This means treated and control units are not comparable
@@ -60,7 +64,7 @@ df %>% ggplot(aes(x = factor(t), y = y0)) +
   labs(x = "Treatment", y = "Baseline Potential Outcome (Y0)")
 ```
 
-- What is the ATE vs the ATC and ATT? How would we calculate these from the science?
+-   What is the ATE vs the ATC and ATT? How would we calculate these from the science?
 
 ```{r}
 # ATE (Average treatment effect - for everyone)
@@ -79,13 +83,17 @@ with(filter(df, t==1), mean(y1) - mean(y0))
 
 # In-Lab Assignment
 
-Do the next part in pairs. Prepare your work using RMarkdown. 
+Do the next part in pairs. Prepare your work using RMarkdown.
 
 ## Fixing the ATE estimation
 
-- You get to play omnipotent being! Create an alternate universe (ie, a new treatment assignment and new outcome variable) such that the difference in means between the treated and the untreated can be reliably estimated.
-- Estimate the difference in means and compare it to the true effect.
-- Are they different? Why/How? 
+-   You get to play omnipotent being! Create an alternate universe (ie, a new treatment assignment and new outcome variable) such that the difference in means between the treated and the untreated can be reliably estimated.
+-   Estimate the difference in means and compare it to the true effect.
+-   Are they different? Why/How?
+
+```{r}
+
+```
 
 ```{r}
 # Sample treatment assignment independently of potential outcomes
@@ -113,11 +121,10 @@ true_ate
 
 ## Conditional Independence
 
-- Create an alternate universe where the difference in means between treatment and control can only be reliably estimated after conditioning on another variable.
-- Create a confounder variable `x` that is related to both treatment assignment and potential outcomes.
-- Show that the naive difference in means is biased.
-- Show that after conditioning on `x`, the difference in means within each stratum provides an unbiased estimate of the ATE.
-
+-   Create an alternate universe where the difference in means between treatment and control can only be reliably estimated after conditioning on another variable.
+-   Create a confounder variable `x` that is related to both treatment assignment and potential outcomes.
+-   Show that the naive difference in means is biased.
+-   Show that after conditioning on `x`, the difference in means within each stratum provides an unbiased estimate of the ATE.
 
 ```{r}
 set.seed(123)
@@ -178,14 +185,15 @@ coef(lm(y_confound ~ t_confound + x, data=df))["t_confound"]
 ```
 
 ## Lalonde Dataset
-- Load the `lalonde` dataset from [Imbens & Wu, (2025)](https://pubs.aeaweb.org/doi/pdfplus/10.1257/jep.20251440). The complete replication package from the paper is available [here](https://www.openicpsr.org/openicpsr/project/232201/version/V1/view?path=/openicpsr/232201/fcr:versions/V1/replication) and an additional tutorial developed be the authors can be found [here](https://yiqingxu.org/tutorials/lalonde/).
-- Estimate the difference in means between the treated and the untreated for the outcome variable `re78`. Compare this benchmark to the ATE estimates obtained using regression adjustment with the covariates.
-- Assess the overlap between the treated and the untreated in the experimental dataset and the two non-experimental datasets (control groups from CPS1 and PSID1). What do you observe? What are the implications for estimation?
-- Discuss the assumptions required for regression adjustment to provide an unbiased estimate of the ATE. Do you think these assumptions are likely to hold in the experimental dataset? What about the non-experimental datasets? 
-  
+
+-   Load the `lalonde` dataset from [Imbens & Wu, (2025)](https://pubs.aeaweb.org/doi/pdfplus/10.1257/jep.20251440). The complete replication package from the paper is available [here](https://www.openicpsr.org/openicpsr/project/232201/version/V1/view?path=/openicpsr/232201/fcr:versions/V1/replication) and an additional tutorial developed be the authors can be found [here](https://yiqingxu.org/tutorials/lalonde/).
+-   Estimate the difference in means between the treated and the untreated for the outcome variable `re78`. Compare this benchmark to the ATE estimates obtained using regression adjustment with the covariates.
+-   Assess the overlap between the treated and the untreated in the experimental dataset and the two non-experimental datasets (control groups from CPS1 and PSID1). What do you observe? What are the implications for estimation?
+-   Discuss the assumptions required for regression adjustment to provide an unbiased estimate of the ATE. Do you think these assumptions are likely to hold in the experimental dataset? What about the non-experimental datasets?
+
 ```{r}
 # Load the Lalonde dataset
-load("Lab 1/lalonde.RData")
+load("lalonde.RData")
 
 # Import functions from GitHub
 source("https://github.com/xuyiqing/lalonde/blob/main/tutorial/functions.R?raw=TRUE")
