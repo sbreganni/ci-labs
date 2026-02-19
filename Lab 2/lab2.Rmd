@@ -23,21 +23,19 @@ library(tidyverse)
 
 This R Markdown walks through a **step-by-step workflow** to build and interpret causal graphs in R:
 
-1. Start with the **three canonical motifs**:
-   - *Mediator* (chain)
-   - *Confounder* (fork / common cause)
-   - *Collider* (common effect)
-
-2. For each motif:
-   - draw the DAG
-   - check the implied (conditional) independencies
-   - connect it to a **real-world example**
-
-3. Recreate two **more complex** examples, then connect them to a **real applied example**.
+1.  Start with the **three canonical motifs**:
+    -   *Mediator* (chain)
+    -   *Confounder* (fork / common cause)
+    -   *Collider* (common effect)
+2.  For each motif:
+    -   draw the DAG
+    -   check the implied (conditional) independencies
+    -   connect it to a **real-world example**
+3.  Recreate two **more complex** examples, then connect them to a **real applied example**.
 
 # Part 1 — Three canonical motifs
 
-## 1) Mediator (chain):  X → Z → Y
+## 1) Mediator (chain): X → Z → Y
 
 ### DAG
 
@@ -70,10 +68,11 @@ ggdag(dag_med, text = TRUE) +
   ) +
   ggtitle("Mediator: conditioning on Z blocks the path from X to Y")
 ```
+
 ### Implied independencies and conditioning
 
-- In a simple chain, **X and Y are associated** (because X can reach Y through Z).
-- But **conditioning on Z blocks** the directed ("front-door") path between X and Y.
+-   In a simple chain, **X and Y are associated** (because X can reach Y through Z).
+-   But **conditioning on Z blocks** the directed ("front-door") path between X and Y.
 
 ```{r}
 impliedConditionalIndependencies(dag_med)
@@ -87,11 +86,11 @@ dseparated(dag_med, "X", "Y", "Z")            # TRUE  (independent given Z)
 
 **Policy training program (X)** increases **skills (Z)**, which increases **wages (Y)**.
 
-- If you *control for skills*, you are estimating something closer to the **direct effect** of training on wages, not the **total effect**.
+-   If you *control for skills*, you are estimating something closer to the **direct effect** of training on wages, not the **total effect**.
 
----
+------------------------------------------------------------------------
 
-## 2) Confounder (fork):  X ← Z → Y
+## 2) Confounder (fork): X ← Z → Y
 
 ### DAG
 
@@ -129,8 +128,8 @@ ggdag(dag_confound, text = TRUE) +
 
 ### Implied independencies and conditioning
 
-- Without conditioning, **X and Y are associated** through their common cause Z.
-- Conditioning on Z blocks the backdoor path.
+-   Without conditioning, **X and Y are associated** through their common cause Z.
+-   Conditioning on Z blocks the backdoor path.
 
 ```{r}
 impliedConditionalIndependencies(dag_confound)
@@ -146,11 +145,11 @@ ggdag_adjustment_set(dag_confound, node_size = 20) +
 
 **Coffee (X)** and **heart disease (Y)** may look associated because **smoking (Z)** increases coffee consumption and heart disease.
 
-- Adjusting for smoking targets the causal link from coffee to heart disease (if no other backdoors remain).
+-   Adjusting for smoking targets the causal link from coffee to heart disease (if no other backdoors remain).
 
----
+------------------------------------------------------------------------
 
-## 3) Collider (common effect):  X → Z ← Y
+## 3) Collider (common effect): X → Z ← Y
 
 ### DAG
 
@@ -187,8 +186,8 @@ ggdag(dag_collider, text = TRUE) +
 
 ### Implied independencies and conditioning
 
-- In a pure collider structure, **X and Y are independent marginally**.
-- Conditioning on the collider **opens** a path and makes them dependent (*collider bias* / Berkson’s paradox).
+-   In a pure collider structure, **X and Y are independent marginally**.
+-   Conditioning on the collider **opens** a path and makes them dependent (*collider bias* / Berkson’s paradox).
 
 ```{r}
 impliedConditionalIndependencies(dag_collider)
@@ -201,18 +200,18 @@ dseparated(dag_collider, "X", "Y", "Z")     # FALSE (dependent given Z)
 
 **Talent (X)** and **connections (Y)** both increase the probability of being **hired (Z)**.
 
-- If you only analyze people **who were hired** (conditioning on Z), talent and connections can become spuriously related.
+-   If you only analyze people **who were hired** (conditioning on Z), talent and connections can become spuriously related.
 
----
+------------------------------------------------------------------------
 
 # Part 2 — Turning motifs into “causal adjustment” questions
 
 A key workflow with DAGs is:
 
-1. Encode your causal story in a DAG.
-2. Choose the causal estimand: total effect? direct effect? etc.
-3. Use `adjustmentSets()` (backdoor) to propose controls.
-4. Think hard: are those controls measured well? are they pre-treatment?
+1.  Encode your causal story in a DAG.
+2.  Choose the causal estimand: total effect? direct effect? etc.
+3.  Use `adjustmentSets()` (backdoor) to propose controls.
+4.  Think hard: are those controls measured well? are they pre-treatment?
 
 ## Example: asking dagitty for adjustment sets
 
@@ -227,7 +226,7 @@ adjustmentSets(dag_confound, exposure = "X", outcome = "Y")
 adjustmentSets(dag_collider, exposure = "X", outcome = "Y")
 ```
 
----
+------------------------------------------------------------------------
 
 # Part 3 — Two more complex examples (inspired by the blackboard)
 
@@ -235,8 +234,8 @@ adjustmentSets(dag_collider, exposure = "X", outcome = "Y")
 
 Here is a common “realistic” picture:
 
-- Treatment **D** affects mediator **M**, which affects outcome **Y**
-- There is an unobserved confounder **U** that affects both **D** and **Y**
+-   Treatment **D** affects mediator **M**, which affects outcome **Y**
+-   There is an unobserved confounder **U** that affects both **D** and **Y**
 
 ```{r}
 dag_complex1 <- dagitty("dag {
@@ -257,29 +256,29 @@ adjustmentSets(dag_complex1, exposure = "D", outcome = "Y")
 
 **Interpretation**
 
-- The backdoor path **D ← U → Y** is open.
-- Because **U is unobserved**, there is **no valid adjustment set using observed variables only**.
-- This is when you start thinking about:
-  - instruments,
-  - natural experiments,
-  - panel designs / fixed effects with strong assumptions,
-  - negative controls / sensitivity analysis,
-  - or (sometimes) collecting better covariates.
+-   The backdoor path **D ← U → Y** is open.
+-   Because **U is unobserved**, there is **no valid adjustment set using observed variables only**.
+-   This is when you start thinking about:
+    -   instruments,
+    -   natural experiments,
+    -   panel designs / fixed effects with strong assumptions,
+    -   negative controls / sensitivity analysis,
+    -   or (sometimes) collecting better covariates.
 
 > Note: controlling for the mediator **M** here *does not* solve confounding; it changes the estimand (direct effect) and may create additional bias depending on what else is in the system.
 
----
+------------------------------------------------------------------------
 
 ## 5) Why adjusting for a confounder does not make D and Y independent
 
 A frequent confusion:
 
-- Under ignorability / unconfoundedness, we want something like  
-  **D ⟂ (Y(0), Y(1)) | U**  
-  (treatment is independent of **potential outcomes**, given confounders)
+-   Under ignorability / unconfoundedness, we want something like\
+    **D ⟂ (Y(0), Y(1)) \| U**\
+    (treatment is independent of **potential outcomes**, given confounders)
 
-That does **not** mean  
-**D ⟂ Y | U**,  
+That does **not** mean\
+**D ⟂ Y \| U**,\
 because **Y depends on D** through the causal effect.
 
 We can show this with a DAG:
@@ -328,10 +327,9 @@ adjustmentSets(dag_complex2, exposure = "D", outcome = "Y")  # U1 is a valid adj
 
 **Interpretation**
 
-- Adjusting for confounders removes *spurious* association (backdoor paths),
-  but the *causal* association (frontdoor path) remains.
+-   Adjusting for confounders removes *spurious* association (backdoor paths), but the *causal* association (frontdoor path) remains.
 
----
+------------------------------------------------------------------------
 
 # Part 4 — A worked real example (template you can adapt)
 
@@ -339,11 +337,11 @@ Below is one realistic applied story (feel free to swap it for your own applicat
 
 ## Example: land-tenure formalization and deforestation
 
-- **D** = land-tenure formalization intervention (e.g., titling / cadaster update)
-- **M** = perceived tenure security / investment (mechanism)
-- **Y** = deforestation rate
-- **U1** = baseline accessibility / road proximity (measured)
-- **U2** = illicit armed group pressure / illegal market dynamics (often imperfectly measured)
+-   **D** = land-tenure formalization intervention (e.g., titling / cadaster update)
+-   **M** = perceived tenure security / investment (mechanism)
+-   **Y** = deforestation rate
+-   **U1** = baseline accessibility / road proximity (measured)
+-   **U2** = illicit armed group pressure / illegal market dynamics (often imperfectly measured)
 
 ```{r}
 dag_defor <- dagify(
@@ -367,10 +365,10 @@ ggdag_adjustment_set(dag_defor, node_size = 20) +
 adjustmentSets(dag_defor, exposure = "D", outcome = "Y")
 ```
 
-- If both **U1 and U2** were measured well, `{U1, U2}` would block backdoors.
-- In practice, **U2** may be partially unobserved → motivates designs beyond plain regression adjustment.
+-   If both **U1 and U2** were measured well, `{U1, U2}` would block backdoors.
+-   In practice, **U2** may be partially unobserved → motivates designs beyond plain regression adjustment.
 
----
+------------------------------------------------------------------------
 
 # Appendix — Useful functions / snippets
 
@@ -403,4 +401,3 @@ adjustmentSets(dag_defor, exposure = "D", outcome = "Y")
 # 7) Test specific d-separation claims
 # dseparated(dag, "X", "Y", "Z")  # or conditioning set as a vector
 ```
-
