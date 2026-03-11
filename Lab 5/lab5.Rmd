@@ -1,5 +1,5 @@
 ---
-title: "Lab 5: Marginal Effects, Omitted Variables, Sensitivity Analysis, and a Brief Introduction to `regweight`"
+title: "Lab 5"
 output: html_document
 date: "`r Sys.Date()`"
 ---
@@ -64,19 +64,13 @@ analysis_vars <- c(
 )
 
 summary_df <- df %>%
-  select(all_of(analysis_vars)) %>%
+  dplyr::select(dplyr::all_of(analysis_vars)) %>%
   summary()
 
 summary_df
 ```
 
 ## 2. Conditional expectation function and marginal effects
-
-Our main regression is:
-
-\[
-E[\log(re78_i + 1) \mid D_i, X_i] = \alpha + \rho D_i + X_i'\beta.
-\]
 
 Here, `treat` is binary, so the coefficient on `treat` is interpreted as the conditional difference in expected log earnings between treated and untreated units, holding the observed covariates fixed.
 
@@ -108,6 +102,9 @@ marginal_effects %>%
 ```
 
 We can also show the treatment effect using predictions for the same covariate profile under `treat = 0` and `treat = 1`.
+In this example, our profile is the average values of the covariates in the sample. 
+The difference in predicted log earnings between `treat = 1` and `treat = 0` is the same as the coefficient on `treat` in the linear model, which is a special case of the linearity assumption. 
+In a more flexible model, these two quantities would not be identical, but they would still be related to each other as marginal effects and predictions are in general.
 
 ```{r prediction-example}
 profile <- df %>%
@@ -164,7 +161,7 @@ model_compare <- bind_rows(
   broom::tidy(m_short) %>% filter(term == "treat") %>% mutate(model = "Omit re75_log"),
   broom::tidy(m_full) %>% filter(term == "treat") %>% mutate(model = "Full model")
 ) %>%
-  select(model, estimate, std.error, statistic, p.value)
+   dplyr::select(model, estimate, std.error, statistic, p.value)
 
 model_compare %>%
   knitr::kable(digits = 3, caption = "How the treatment coefficient changes across specifications")
@@ -209,16 +206,16 @@ ovb_table %>%
 
 The last two rows should be almost identical up to numerical precision. That is the linear omitted-variable-bias decomposition at work.
 
-## 4. Partial \(R^2\) and sensitivity analysis
+## 4. Partial (R^2) and sensitivity analysis
 
 Sensitivity analysis asks how strong an unobserved confounder would need to be to change the treatment estimate. The two key quantities are:
 
-- outcome-side partial \(R^2\): how much of the residual outcome variation a confounder explains,
-- treatment-side partial \(R^2\): how much of the residual treatment variation it explains.
+- outcome-side partial (R^2): how much of the residual outcome variation a confounder explains,
+- treatment-side partial (R^2): how much of the residual treatment variation it explains.
 
-We first compute the partial \(R^2\) of an observed benchmark variable, `re75_log`, and then use those values to calibrate hypothetical confounders.
+We first compute the partial (R^2) of an observed benchmark variable, `re75_log`, and then use those values to calibrate hypothetical confounders.
 
-### A helper for partial \(R^2\)
+### A helper for partial (R^2)
 
 ```{r partial-r2-helper}
 partial_r2 <- function(reduced_model, full_model) {
@@ -228,7 +225,7 @@ partial_r2 <- function(reduced_model, full_model) {
 }
 ```
 
-### Benchmark partial \(R^2\) for `re75_log`
+### Benchmark partial (R^2) for `re75_log`
 
 ```{r benchmark-r2}
 # Outcome-side partial R^2 for re75_log
@@ -271,18 +268,9 @@ benchmark_table %>%
 
 ### Manual contour plot
 
-The graph below is built from a grid of hypothetical confounders. Each point in the graph is a pair:
-
-\[
-\left(R^2_{D \sim U \mid X},\; R^2_{Y \sim U \mid D, X}\right).
-\]
-
-For each pair we compute the implied bias using:
-
-\[
-|\text{bias}| = se(\hat\rho)\sqrt{\frac{R^2_{Y \sim U \mid D,X}R^2_{D \sim U \mid X}}{1 - R^2_{D \sim U \mid X}} \cdot df }.
-\]
-
+The graph below is built from a grid of hypothetical confounders. 
+Each point in the graph is a pair of partial (R^2) values for the treatment and outcome regressions, respectively.
+For each pair we compute the implied bias using the formula from Cinelli and Hazlett (2020).
 The red dashed contour is the set of confounder strengths that would reduce the treatment estimate to zero.
 
 ```{r sensitivity-grid}
@@ -360,15 +348,10 @@ sens
 plot(sens)
 ```
 
-## 5. Brief bridge to machine learning
+## 5. Brief introduction to `regweight`
 
-A linear model is a simple way to describe the conditional expectation function. Machine-learning models pursue the same goal, but with more flexible functional forms, many controls, and automatic interactions or nonlinearities.
-
-This can help with *functional-form misspecification* for observed covariates. It does **not** solve omitted-variable bias from variables that are never observed. That is why sensitivity analysis still matters even if a more flexible predictive model is used.
-
-## 6. Brief introduction to `regweight`
-
-The `regweight` package is useful when you want to know **which observations matter most for a particular regression coefficient**. Instead of focusing on global leverage, it focuses on the implicit weights behind one selected term.
+The `regweight` package is useful when you want to know **which observations matter most for a particular regression coefficient**. 
+Instead of focusing on global leverage, it focuses on the implicit weights behind one selected term.
 
 Below we ask for the implicit regression weights behind the coefficient on `treat` in the full model.
 
@@ -377,35 +360,39 @@ rw_treat <- regweight::calculate_weights(m_full, "treat")
 
 hist(rw_treat)
 ```
+The histogram above shows the distribution of the implicit regression weights for the `treat` coefficient.
+Some observations have more influence on the `treat` coefficient than others, and this is not necessarily related to leverage in the usual sense.
 
 We can also inspect how those implicit weights vary over a discrete covariate.
-
 ```{r regweight-discrete}
 plot(rw_treat, df$married)
 ```
+The implicit sample for the `treat` coefficient gives more weight to some observations than others, and this can be related to covariate values.
+The nominal sample is the original data, and the implicit sample is the data weighted by the regression weights for the `treat` coefficient.
+In our example, the implicit sample for the `treat` coefficient gives more weight to unmarried units than married units. This means that the `treat` coefficient is learning more from unmarried units than married units.
 
 And we can compare the nominal and implicit samples for a few covariates.
 
 ```{r regweight-summary}
 summary(
   rw_treat,
-  dplyr::select(df, age, married, nodegr, re74_log),
-  output = "html"
+  dplyr::select(df, age, married, nodegr, re74_log)
 )
+
+plot(rw_treat, df$age)
 ```
+For the `age` variable, the implicit sample is younger than the nominal sample, which means that the `treat` coefficient is learning more from younger units than older units.
+From the plot of `age`, we can see that the implicit sample has more weight on younger units than older units, which is consistent with the summary statistics.
 
 ### Interpretation
 
 A useful reading strategy is:
 
+- without using weights, we can only talk about the regression coefficient as a global quantity that describes the entire sample,
+- with regression weights, we can talk about the regression coefficient as a local quantity that describes a particular implicit sample,
+- if the weight distribution is very dispersed, the regression coefficient is learning from a wide range of observations,
 - if the weight distribution is very concentrated, a relatively small set of observations is driving the coefficient,
 - if the implicit sample looks very different from the nominal sample, the regression coefficient may be learning mostly from a specific part of the data,
 - this is especially useful when you worry that the OLS estimand may be giving more influence to some units than others.
 
-## 7. Suggested discussion questions
 
-1. How does the treatment coefficient change as we add more controls?
-2. Does omitting `re75_log` produce bias in the expected direction?
-3. How large would a hidden confounder need to be to drive the treatment estimate to zero?
-4. Is `re75_log` a substantively strong benchmark?
-5. Which observations receive more implicit weight in the `treat` coefficient according to `regweight`?
