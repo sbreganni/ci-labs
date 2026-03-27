@@ -495,7 +495,7 @@ simulate_tradeoff <- function(n = 30000,
 
 ```{r tradeoff-grid}
 grid_vals <- seq(0, 1.2, by = 0.1)
-tradeoff_results <- map_dfr(grid_vals, ~ simulate_tradeoff(beta_x = 0.7, alpha_x = 7, tau = 1, m_strength = .x))
+tradeoff_results <- map_dfr(grid_vals, ~ simulate_tradeoff(beta_x = 0.7, alpha_x = 0.7, tau = 1, m_strength = .x))
 
 tradeoff_results %>%
   kable(digits = 3, caption = "First rows of the trade-off simulation results")
